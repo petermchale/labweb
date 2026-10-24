@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+.DS_Store
+.env
+.env.*
+*.token
+*.sqlite*
+.labkg-dev*/
+data/
+tokens.json
+deploy/tokens.json
+.mcp.json
+.codex/
+work/

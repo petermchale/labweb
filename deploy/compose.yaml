@@ -1,0 +1,44 @@
+services:
+  kg:
+    build: ..
+    restart: unless-stopped
+    environment:
+      LABKG_TOKENS_FILE: /run/secrets/labkg_tokens
+    secrets:
+      - labkg_tokens
+    volumes:
+      - graph:/data
+    expose:
+      - "8765"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8765/health',timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  https:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      LABKG_DOMAIN: ${LABKG_DOMAIN:?Set the lab server DNS name}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - tls:/data
+      - caddy_config:/config
+    depends_on:
+      kg:
+        condition: service_healthy
+secrets:
+  labkg_tokens:
+    file: ./tokens.json
+volumes:
+  graph:
+  tls:
+  caddy_config:

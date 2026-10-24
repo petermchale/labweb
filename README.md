@@ -1,0 +1,141 @@
+# Labweb — shared lab knowledge for connected agents
+
+Start with **[Codex and Claude Code setup and UX testing](docs/UX_TESTING.md)**. Run `./scripts/setup.sh`, then `./scripts/dev.sh`. This repository starts with an empty KG; the connected agent initializes it from your metadata. LabKG is the Python server package.
+
+**Connected-agent initialization is available:** give the metadata and source URLs to an agent with the LabKG tools; the agent authors the schemas/workflow bundle and the dev server validates and atomically commits it. See [the dev-server and agent guide](CONNECTED_AGENT.md).
+
+**Current project policy:** retain only manifest/PED paths and schemas. The historical experiment purged earlier instance imports, including their history. Six source-grounded workflow notes now project 22 high-level steps into RDF. See [project knowledge](knowledge/README.md). Reports from the initial experiment describe the earlier state; they are not current data-retention guidance.
+
+An executable development prototype intended to become a shared lab server. A future hosted deployment lets members use one persistent graph over HTTPS. MCP is an optional client adapter; RDF and HTTP are the core interfaces. The included deployment configuration has not been run on a lab host.
+
+## Original requirements not yet fully met
+
+This status is measured against the initial request, with subsequent scope changes called out explicitly. Working protocol tests are not evidence that all of the original product goals have been achieved.
+
+| Original requirement | Current status and remaining work |
+|---|---|
+| Continually distill connected agents' work into useful knowledge | **Partial.** Agent-authored summaries, deterministic extraction, durable journals and retrieval work. There is no server-side semantic reflection worker that synthesizes and evaluates reusable scientific lessons from ongoing work. |
+| Connect an agent and continue working as usual, with automatic capture | **Not fully met.** MCP alone does not expose conversation history or tool activity. The agent must follow the recording policy, or an explicit capture/journal adapter must be configured. Automatic Codex/Claude Code lifecycle hooks and reliable coverage of ordinary sessions are not implemented. |
+| Initialize from structured/unstructured input or a website | **Partial.** The connected agent can derive schemas/workflows and submit a citation-checked bundle; the server also supports bounded deterministic extraction. Website access is limited to allowlisted public GitHub/gist sources, not arbitrary sites or private repositories. General-purpose automatic entity/relation extraction is not implemented. |
+| Initialize the methylation knowledge base from supplied data | **Implemented with later scope restrictions; fresh-agent UX unverified.** A live MCP replay initialized the agent-authored bundle. This is not a fresh Codex/Claude inference test. Only manifest/PED paths and schemas are retained, as later requested. Full-file validation and longitudinal-study initialization remain unavailable because those inputs were not provided locally. This repository intentionally starts with empty runtime state. |
+| Let other agents reuse knowledge and accelerate work, reducing repeated folder searches | **Reuse demonstrated; acceleration unproven.** Shared-client retrieval works. The small retrieval experiment did not establish faster or more correct task completion, or that repository searches can be eliminated. A matched downstream task evaluation is still needed. |
+| Test whether the KG accelerates Nextflow generalization from pedigrees to trios | **Incomplete.** Synthetic trio selection, source retrieval and four existing Tapestry regression tests were exercised. The generic trio Nextflow branch, full workflow execution, real-data validation and controlled with/without-KG implementation comparison remain undone. |
+| Visualize the KG inside an agent using preselected components/contracts | **Partial (originally a nice-to-have).** A fixed EvidenceGraph contract and renderer exist. Native inline integration and end-to-end visual UX in Codex and Claude Code have not been implemented/verified; `graph_view` returns a data contract. |
+| Shared server available to all lab members | **Deferred by later instruction accepting a dev server.** Local server and deployment configuration exist; lab-host deployment, TLS/container operation, member onboarding and operational recovery are not validated. |
+
+The requested comparison with the Labbrain plan **was completed after the independent implementation/testing freeze**; see [the comparison](reports/LABBRAIN_COMPARISON.md). Its broader federation, governance and protected-environment features are comparison findings, not additional requirements inferred from the initial prompt. Later integration into `~/labweb` was explicitly requested after that independent phase.
+
+Later requests implemented here include metadata-only file contracts, six source-grounded workflow notes (22 steps), agent-side initialization, and contract-based clarification. Source matching validates traceability, not scientific truth. Missing-information questions are generated by the server and asked by the connected agent; conversational reliability still needs the [manual UX tests](docs/UX_TESTING.md).
+
+## What is implemented
+
+- RDF 1.1 named source-revision graphs; assertion reification, PROV-O attribution and source lineage; SHACL validation; TriG export.
+- Persistent SQLite/WAL transactions, source hashes, immutable history, latest-source retrieval, duplicate-event suppression and durable journal offsets.
+- Authenticated HTTP ingestion, evidence retrieval, fixed UI contracts, eligible-trio traversal, and a native read-only SPARQL endpoint returning standard SPARQL JSON results. No MCP is needed to use these.
+- Text, metadata-only file contracts, YAML-LD workflow notes, and explicit claim ingestion. Raw PED/manifest parsing is restricted to explicitly synthetic tests. Text extraction identifies file mentions, Python definitions/imports, and labeled Decision/Result/Constraint/Blocked observations. It does **not** claim unrestricted biological relation extraction or use an LLM.
+- Allowlisted HTTPS GitHub raw/API/gist connector; bounded downloads; no execution of fetched source. Import specific URLs rather than unrestricted website crawling.
+- Optional MCP tools: `initialization_contract`, `read_source`, `assess_initialization`, `initialize_project`, `project_context`, `recall`, `record_work`, `graph_view`. All call the same HTTP server.
+- Continuous append-only journal ingestion, restart-safe remote forwarding, and an opt-in command-output capture adapter. Agent integration policy is in `examples/AGENT_INTEGRATION.md`.
+- A fixed `EvidenceGraph` component with JSON Schema validation and evidence drill-down. The agent selects data/contracts; source content cannot generate executable UI code.
+
+## Run locally
+
+Python 3.11+ (tested here on 3.13). From this directory:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install '.[test]'
+# Generate a token without placing its value in shell history:
+.venv/bin/python -c 'import json,secrets; from pathlib import Path; p=Path("tokens.json"); p.write_text(json.dumps({secrets.token_urlsafe(32):{"actor":"alice","role":"writer"}})); p.chmod(0o600)'
+export LABKG_TOKENS_FILE="$PWD/tokens.json"
+.venv/bin/labkg --db data/labkg.sqlite serve
+```
+
+Token configuration maps each opaque credential to a member/agent identity and `reader` or `writer` role. HTTP callers cannot override the authenticated actor. All authenticated lab members can read the graph; writers share edit access to source heads. This is one collaborative trust domain, **not** a multi-tenant or per-study access-control system. Use unique event/source IDs; a writer can supersede a shared source. Historical revisions remain available. Rotate/revoke credentials by editing the token file and restarting the service. No credentials ship in the deliverable.
+
+## Deploy for the lab
+
+`deploy/compose.yaml` runs one unprivileged application container behind Caddy HTTPS, with a persistent graph volume and a token-file secret. On your lab host:
+
+1. Point a lab DNS name at the host; allow HTTPS and the ACME challenge ports, or adapt Caddy to the lab's existing TLS ingress.
+2. Put the member credentials in `deploy/tokens.json`, restrict its filesystem permissions, and set `LABKG_DOMAIN` to that DNS name.
+3. Run `docker compose -f deploy/compose.yaml up -d --build`.
+4. Give each member their own token through the lab's secret-sharing system. Agents use `https://YOUR-LAB-DOMAIN`, never a shared filesystem path.
+5. Back up SQLite using its online backup API; include versioned backups and verify restoration. Do not copy only the live `.sqlite` file while WAL writes are active.
+
+The container has a health check and restart policy. Caddy limits request bodies to 3 MB; individual documents are limited to 2 MB. Docker and public TLS deployment were unavailable here, so the image/compose configuration is supplied but not certified by a container run. Pin production base-image digests after your deployment review. SQLite on a local persistent disk is appropriate for this small single-server prototype; **do not** share its volume over NFS or deploy several independent replicas. Large graphs need a dedicated triple store/search service, job queue, quotas and operational monitoring. The current RDF query/view path materializes the active graph, so it is not a large-graph serving architecture.
+
+## Native interfaces
+
+All endpoints except `/health` require `Authorization: Bearer TOKEN`.
+
+| Interface | Purpose |
+|---|---|
+| POST `/ingest` | `{source,kind,content,study,evidence_status}`; actor comes from credential |
+| POST `/recall` | `{query,limit}` → line-cited chunks plus bounded RDF assertions |
+| POST `/view` | `{query}` → `labkg.ui/v1` / `EvidenceGraph` |
+| GET `/trios?study=non-longitudinal` | Synthetic-fixture RDF joins; returns not_evaluated when only file contracts are retained |
+| GET `/export?history=false` | TriG, latest source revisions; `history=true` includes old graphs |
+| GET `/sparql?query=...` | Local-dataset SELECT/ASK |
+| POST `/sparql` | `Content-Type: application/sparql-query`, query as request body |
+
+SPARQL excludes UPDATE, external FROM datasets, and SERVICE federation. Queries run in a separate process with a five-second deadline, at most 1,000 rows and 2 MB output. This is a constrained SPARQL query interface, not a complete SPARQL Protocol implementation (no form POST, graph store protocol or update endpoint). Use LIMIT and explicit GRAPH clauses when examining provenance. The default graph is the union of active source graphs. Exported RDF works with other standards-compatible stores.
+
+```sparql
+PREFIX kg: <https://labkg.local/vocab/>
+SELECT ?child ?father ?mother WHERE {
+  ?child kg:sequenced true; kg:father ?father; kg:mother ?mother.
+  ?father kg:sequenced true.
+  ?mother kg:sequenced true.
+}
+```
+
+The namespace `https://labkg.local/` is a prototype identifier namespace, not a publicly dereferenceable ontology service. Replace it with a controlled permanent lab namespace before production data migration.
+
+## Ingest and keep working
+
+```bash
+labkg --db data/labkg.sqlite ingest knowledge/contracts/ped.json --kind file_contract
+labkg --db data/labkg.sqlite ingest knowledge/contracts/manifest.json --kind file_contract
+labkg --db data/labkg.sqlite ingest knowledge/workflows/trio-legacy.md --kind workflow
+labkg --db data/labkg.sqlite url https://api.github.com/gists/e5d08d13c23aed4064b54dec9154a2a4
+```
+
+Local CLI import is a trusted administrator path. Remote members use HTTP or the optional MCP adapter:
+
+```bash
+export LABKG_URL=https://YOUR-LAB-DOMAIN
+# Set LABKG_TOKEN through your agent's secret environment configuration.
+labkg-mcp
+```
+
+Configure that executable as a stdio MCP server in any compatible agent client. Client registration is not performed automatically by this prototype, and this chat has not been globally reconfigured. A real MCP client harness and direct HTTP calls were used to connect this agent's work to the server.
+
+For automatic command-output capture and upload, run the watcher in one supervised process and the agent through the adapter in another:
+
+```bash
+labkg --db local-cursors.sqlite watch work-events.jsonl --url https://YOUR-LAB-DOMAIN
+python examples/capture.py work-events.jsonl urn:agent:alice:unique-run-id -- YOUR_AGENT_CLI
+```
+
+Create the empty journal before starting the watcher. Use a new filename for each journal rotation; truncation is rejected. Failed uploads leave the offset unacknowledged so a supervised restart retries. Malformed records stop visibly and need repair. Do not run multiple watchers on one cursor/journal. The capture adapter streams output to the terminal and records it; it cannot see silent reasoning, internal tools or UI-only agent sessions. Capture is opt-in and does not redact secrets. MCP connection alone does not automatically observe work: a client hook, this wrapper, or the agent policy must emit the events. No server can infer unseen work merely from a connection.
+
+## Identity, evidence and corrections
+
+- For synthetic parser tests only, person identity is `(study, exact SampleID)`; no prefix matching. Longitudinal visits are not inferred from a suffix. The supplied lab PED's sixth column is sequencing center, **not** the conventional PED phenotype column.
+- In synthetic parser tests only, SampleID rows create `sequenced=true`; FatherID/MotherID references and manifest keys do not. These values describe the user's sequencing rule, not file existence verification.
+- Multiple BAMs remain separate nodes; center is retained and checked in trio input selection. No basename-only or center-stripping joins.
+- `user-example`, `synthetic`, `source`, and `agent-report` label evidence origin. None means independently verified biological truth. Quotes, methods, source hashes, line numbers and source revisions accompany assertions.
+- Text mentions remain `mentions`; Python imports are syntactic imports. Agent-submitted claims require evidence text but are not automatically verified. Different sources may disagree; there is no confidence-score fiction or automatic conflict adjudication. The trio selector rejects multiple father/mother assertions.
+- Reingesting an existing content/actor/source/status hash is an idempotent replay and does not move the head backwards. Corrections use new content. Explicit rollback, source deletion, entity merge review and fine-grained access control are not implemented.
+
+## Test and reproduce
+
+```bash
+python -m pytest -q tests
+python examples/seed.py --db data/labkg.sqlite --repo /path/to/tapestry --gist /path/to/downloaded-gist-api.json
+python examples/benchmark.py --repo /path/to/tapestry --credentials /path/to/test-token-map.json --output reports/retrieval-benchmark.json
+python examples/mcp_probe.py /path/to/two-test-token-map.json
+```
+
+`reports/UTILITY.md` describes exactly what the genomics experiment establishes. `reports/INDEPENDENT_DESIGN.md` records the design before reading Labbrain. The final comparison is separate. The actual `/scratch` files and longitudinal metadata were unavailable; the separately tested seeded graph contained file paths/schemas, curated workflow notes, selected real Tapestry source files, the public WDL gist, and attributed work reports. It contains no user-example PED rows or manifest entries. Synthetic trio fixtures exist only in tests, not as real lab subjects.

@@ -1,0 +1,9 @@
+data
+reports
+.venv
+__pycache__
+*.sqlite*
+deploy/tokens.json
+
+.labkg-dev
+*.token

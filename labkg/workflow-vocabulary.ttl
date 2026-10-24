@@ -1,0 +1,29 @@
+@prefix kg: <https://labkg.local/vocab/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+<https://labkg.local/ontology/workflows> a owl:Ontology;
+ rdfs:comment "A small vocabulary for documented procedure plans and data contracts; no completed execution is implied." .
+kg:Workflow a rdfs:Class; rdfs:subClassOf prov:Plan; rdfs:label "Workflow plan" .
+kg:PlanStep a rdfs:Class; rdfs:subClassOf prov:Plan; rdfs:label "Conceptual workflow step" .
+kg:ArtifactContract a rdfs:Class; rdfs:label "Description of an input or output kind, not a concrete data file" .
+kg:FileContract a rdfs:Class; rdfs:subClassOf kg:ArtifactContract; rdfs:label "Filesystem location and schema" .
+kg:hasStep a owl:ObjectProperty; rdfs:domain kg:Workflow; rdfs:range kg:PlanStep .
+kg:dependsOn a owl:ObjectProperty; rdfs:domain kg:PlanStep; rdfs:range kg:PlanStep;
+ rdfs:comment "A curated prerequisite between conceptual steps, not a scheduler edge or execution event." .
+kg:input a owl:ObjectProperty; rdfs:domain prov:Plan; rdfs:range kg:ArtifactContract .
+kg:output a owl:ObjectProperty; rdfs:domain prov:Plan; rdfs:range kg:ArtifactContract .
+kg:uses a owl:ObjectProperty; rdfs:domain prov:Plan;
+ rdfs:comment "Documented code/tool reference; its presence does not authorize execution." .
+kg:implementationStatus a owl:DatatypeProperty; rdfs:range xsd:string .
+kg:constraint a owl:DatatypeProperty; rdfs:range xsd:string .
+kg:path a owl:DatatypeProperty; rdfs:domain kg:FileContract; rdfs:range xsd:string;
+ rdfs:comment "Literal absolute path or glob pattern; no data-file dereference is performed." .
+kg:schema a owl:DatatypeProperty; rdfs:domain kg:FileContract;
+ rdfs:comment "JSON Schema describing the file or its parsed rows, including format and interpretation annotations." .
+kg:sourceDigest a owl:DatatypeProperty; rdfs:range xsd:string .
+kg:sourceStartLine a owl:DatatypeProperty; rdfs:range xsd:integer .
+kg:sourceEndLine a owl:DatatypeProperty; rdfs:range xsd:integer .
+kg:sourceQuote a owl:DatatypeProperty; rdfs:range xsd:string .
+kg:supportingSource a owl:ObjectProperty .

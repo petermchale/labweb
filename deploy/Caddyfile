@@ -1,0 +1,6 @@
+{$LABKG_DOMAIN} {
+    request_body {
+        max_size 3MB
+    }
+    reverse_proxy kg:8765
+}

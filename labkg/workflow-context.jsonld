@@ -1,0 +1,42 @@
+{
+  "@context": {
+    "id": "@id",
+    "type": "@type",
+    "kg": "https://labkg.local/vocab/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "label": "rdfs:label",
+    "description": "https://schema.org/description",
+    "steps": "kg:hasStep",
+    "inputs": {
+      "@id": "kg:input",
+      "@type": "@id"
+    },
+    "outputs": {
+      "@id": "kg:output",
+      "@type": "@id"
+    },
+    "dependsOn": {
+      "@id": "kg:dependsOn",
+      "@type": "@id"
+    },
+    "uses": {
+      "@id": "kg:uses",
+      "@type": "@id"
+    },
+    "constraints": "kg:constraint",
+    "status": "kg:implementationStatus",
+    "derivedFrom": {
+      "@id": "prov:wasDerivedFrom",
+      "@type": "@id"
+    },
+    "sourceDigest": "kg:sourceDigest",
+    "sourceStartLine": "kg:sourceStartLine",
+    "sourceEndLine": "kg:sourceEndLine",
+    "sourceQuote": "kg:sourceQuote",
+    "supportingSources": {
+      "@id": "https://labkg.local/vocab/supportingSource",
+      "@type": "@id"
+    }
+  }
+}

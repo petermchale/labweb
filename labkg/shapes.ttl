@@ -1,0 +1,24 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix kg: <https://labkg.local/vocab/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+kg:AssertionShape a sh:NodeShape; sh:targetClass rdf:Statement;
+ sh:property [ sh:path rdf:subject; sh:minCount 1; sh:maxCount 1; sh:nodeKind sh:IRI ];
+ sh:property [ sh:path rdf:predicate; sh:minCount 1; sh:maxCount 1; sh:nodeKind sh:IRI ];
+ sh:property [ sh:path rdf:object; sh:minCount 1; sh:maxCount 1 ];
+ sh:property [ sh:path prov:wasDerivedFrom; sh:minCount 1; sh:maxCount 1; sh:nodeKind sh:IRI ];
+ sh:property [ sh:path kg:method; sh:minCount 1; sh:maxCount 1 ].
+kg:PersonShape a sh:NodeShape; sh:targetClass kg:Person;
+ sh:property [ sh:path kg:study; sh:minCount 1; sh:maxCount 1 ];
+ sh:property [ sh:path kg:sequenced; sh:minCount 1; sh:maxCount 1 ].
+kg:WorkflowShape a sh:NodeShape; sh:targetClass kg:Workflow;
+ sh:property [ sh:path kg:hasStep; sh:minCount 1; sh:nodeKind sh:IRI ];
+ sh:property [ sh:path kg:implementationStatus; sh:minCount 1; sh:maxCount 1 ];
+ sh:property [ sh:path prov:wasDerivedFrom; sh:minCount 1; sh:nodeKind sh:IRI ].
+kg:StepShape a sh:NodeShape; sh:targetClass kg:PlanStep;
+ sh:property [ sh:path kg:input; sh:minCount 1; sh:nodeKind sh:IRI ];
+ sh:property [ sh:path kg:output; sh:minCount 1; sh:nodeKind sh:IRI ];
+ sh:property [ sh:path prov:wasDerivedFrom; sh:minCount 1; sh:nodeKind sh:IRI ].
+kg:FileContractShape a sh:NodeShape; sh:targetClass kg:FileContract;
+ sh:property [ sh:path kg:path; sh:minCount 1; sh:maxCount 1 ];
+ sh:property [ sh:path kg:schema; sh:minCount 1; sh:maxCount 1 ].
