@@ -1,11 +1,12 @@
 """One-command development server with private credentials and an agent config."""
-import argparse,json,secrets,sys
+import argparse,json,os,secrets,sys
 from pathlib import Path
 import uvicorn
 from labkg.api import create_app
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--state',default='.labkg-dev');p.add_argument('--port',type=int,default=8766)
+    default_state=os.environ.get('LABKG_STATE') or str(Path.home()/'labweb-project-data/runtime')
+    p=argparse.ArgumentParser();p.add_argument('--state',default=default_state);p.add_argument('--port',type=int,default=8766)
     a=p.parse_args();state=Path(a.state).resolve();state.mkdir(parents=True,exist_ok=True);state.chmod(0o700)
     token_file=state/'agent.token'
     if not token_file.exists():token_file.write_text(secrets.token_urlsafe(32))
