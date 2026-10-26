@@ -92,5 +92,10 @@ Use a reader token; do not paste credentials into chat or URLs.
 
 The UI receives a versioned subgraph and only uses maintained components. It
 must never execute HTML/JavaScript contained in source evidence. The A2UI adapter
-currently supports only the published fixed composition, not arbitrary screens.
+supports an ordered subset of the published EvidenceGraph/EvidencePanel components.
+Ask for “only the graph”, “only the source evidence”, and “evidence first, then
+graph”; verify omission/order and that expansion preserves the chosen components.
+In evidence-only mode, use the Evidence item picker to inspect a source quotation.
+Reconnect the MCP client after updating so it discovers the components argument.
+Arbitrary screens and unregistered components remain unsupported.
 Run `npm run build:ui` and `npm run test:ui` after UI changes in addition to pytest.

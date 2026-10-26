@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:labweb:a2ui:catalog:v1",
   "catalogId": "urn:labweb:a2ui:catalog:v1",
-  "title": "Labweb evidence composition prototype",
+  "title": "Labweb selectable evidence components",
   "components": {
     "Column": {
       "type": "object",

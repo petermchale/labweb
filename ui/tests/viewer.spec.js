@@ -66,3 +66,43 @@ test('server A2UI stream uses the same components and rejects unknown catalog',a
   await expect(page.locator('pre')).toContainText('<script>window.injected=true</script>');
   expect(await page.evaluate(()=>window.injected)).toBeUndefined();
 });
+for(const mode of ['graph-only','evidence-only','evidence-first'])test(`MCP renders requested components: ${mode}`,async({page})=>{
+  await page.goto(base+'/host?'+mode);
+  const frame=page.frameLocator('#app');
+  if(mode==='evidence-only'){
+    await expect(frame.getByRole('heading',{name:'Evidence',exact:true})).toBeVisible();
+    await expect(frame.locator('.graph')).toHaveCount(0);
+    await frame.getByLabel('Evidence item').selectOption({index:3});
+    await expect(frame.locator('pre')).toContainText('Synthetic');
+  }else{
+    await expect(frame.locator('.node-choice')).toHaveCount(2);
+    await expect(frame.getByRole('heading',{name:'Evidence',exact:true})).toHaveCount(mode==='graph-only'?0:1);
+    if(mode==='evidence-first')await expect(frame.locator('#labweb > section').first().getByRole('heading',{name:'Evidence',exact:true})).toBeVisible();
+    await frame.getByText('Nodes and neighborhood expansion',{exact:true}).press('Enter');
+    await frame.getByRole('button',{name:'Expand outputs',exact:true}).press('Enter');
+    await expect(frame.locator('.node-choice')).toHaveCount(3);
+    expect(await page.evaluate(()=>window.toolArguments[0].components)).toEqual(mode==='graph-only'?['EvidenceGraph']:['EvidencePanel','EvidenceGraph']);
+    await expect(frame.getByRole('heading',{name:'Evidence',exact:true})).toHaveCount(mode==='graph-only'?0:1);
+  }
+  expect(await page.evaluate(()=>window.injected)).toBeUndefined();
+});
+test('invalid compositions leave the existing surface intact',async({page})=>{
+  await page.goto(base+'/composition-test');
+  const results=await page.evaluate(async()=>{
+    const {mountComposition,compose}=await import('/test-modules/a2ui.js');
+    const graph=await fetch('/view',{method:'POST',headers:{Authorization:'Bearer synthetic-browser-token','Content-Type':'application/json'},body:JSON.stringify({query:'hifi',project_id:'demo'})}).then(r=>r.json());
+    const root=document.getElementById('labweb');mountComposition(root,compose(graph));
+    const original=root.firstChild;
+    const edits=[
+      m=>m[1].updateComponents.components[1].component='Script',
+      m=>m[1].updateComponents.components[0].children=['graph','graph'],
+      m=>m[1].updateComponents.components.push({id:'orphan',component:'EvidencePanel'}),
+      m=>m[1].updateComponents.components[1].graph.path='/untrusted',
+      m=>m[1].updateComponents.surfaceId='other',
+      m=>m[2].updateDataModel.value.graph.edges[0].subject='missing',
+    ];
+    return edits.map(edit=>{const messages=compose(graph);edit(messages);try{mountComposition(root,messages);return false;}catch{return root.firstChild===original;}});
+  });
+  expect(results).toEqual(Array(6).fill(true));
+  await expect(page.locator('.node-choice')).toHaveCount(2);
+});

@@ -3,8 +3,8 @@
 const token='synthetic-browser-token';
 const resource=await fetch('/ui/resource',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
 const frame=document.getElementById('app');
-window.messages=[];
-async function graph(args){return fetch('/view',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(args)}).then(r=>r.json());}
+window.messages=[];window.toolArguments=[];
+async function graph(args){const response=await fetch('/view/a2ui',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(args)});const a2ui=(await response.text()).trim().split('\n').map(JSON.parse);return {contract:'labkg.view/v1',graph:a2ui[2].updateDataModel.value.graph,a2ui};}
 window.addEventListener('message',async event=>{
  if(event.source!==frame.contentWindow)return;
  const m=event.data;window.messages.push(m.method);
@@ -15,8 +15,8 @@ window.addEventListener('message',async event=>{
   if(location.search.includes('decline'))event.source.postMessage({jsonrpc:'2.0',id:m.id,error:{code:-32601,message:'Display mode unavailable'}},'*');
   else{window.displayMode=m.params.mode;reply({mode:m.params.mode});}
  }
- else if(m.method==='ui/notifications/initialized')event.source.postMessage({jsonrpc:'2.0',method:'ui/notifications/tool-result',params:{structuredContent:await graph({query:'hifi',project_id:'demo'}),content:[]}},'*');
- else if(m.method==='tools/call')reply({structuredContent:await graph(m.params.arguments),content:[]});
+ else if(m.method==='ui/notifications/initialized')event.source.postMessage({jsonrpc:'2.0',method:'ui/notifications/tool-result',params:{structuredContent:await graph({query:'hifi',project_id:'demo',components:location.search.includes('graph-only')?['EvidenceGraph']:location.search.includes('evidence-only')?['EvidencePanel']:location.search.includes('evidence-first')?['EvidencePanel','EvidenceGraph']:undefined}),content:[]}},'*');
+ else if(m.method==='tools/call'){window.toolArguments.push(m.params.arguments);reply({structuredContent:await graph(m.params.arguments),content:[]});}
 });
 frame.srcdoc=resource.html;
 })();

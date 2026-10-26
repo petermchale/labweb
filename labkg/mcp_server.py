@@ -1,6 +1,6 @@
 """A stdio MCP bridge: all agents share the HTTP server's persistent graph."""
 import os
-from typing import Any
+from typing import Any, Literal
 import httpx
 from mcp.server.mcpserver import MCPServer
 
@@ -43,15 +43,26 @@ def evidence_graph_app()->str:
 @mcp.tool(meta={'ui':{'resourceUri':UI_URI}}, structured_output=True)
 def graph_view(query:str='', project_id:str|None=None, focus:str|None=None,
                depth:int=1, max_nodes:int=50, max_edges:int=80,
-               predicates:list[str]|None=None)->dict[str, Any]:
+               predicates:list[str]|None=None,
+               components:list[Literal['EvidenceGraph','EvidencePanel']]|None=None)->dict[str, Any]:
     """Explore an evidence subgraph with citations and explicit scope/omission counts.
 
     Set project_id for project-scoped retrieval. Focus on a returned node ID to
     expand its neighborhood (depth 0-3). This is read-only. Supporting MCP hosts
-    display the bundled EvidenceGraph app; other clients receive the same data.
+    display the bundled evidence app; other clients receive the same data.
+    Translate natural-language display requests into components, in display order:
+    "only the graph" -> ['EvidenceGraph']; "only evidence / sources" -> ['EvidencePanel'];
+    "evidence first, then graph" -> ['EvidencePanel','EvidenceGraph'].
+    Omit components for graph then evidence. Only these two components are available;
+    do not put display instructions in query (query searches graph identifiers/labels).
+    Returns labkg.view/v1 with unchanged labkg.graph/v2 data in graph and an A2UI
+    composition in a2ui. No additional model call is made by this server.
     """
-    return call('/view',dict(query=query,project_id=project_id,focus=focus,depth=depth,
+    from .presentation import component_choices, view_result
+    choices=component_choices(components)
+    graph=call('/view',dict(query=query,project_id=project_id,focus=focus,depth=depth,
                             max_nodes=max_nodes,max_edges=max_edges,predicates=predicates))
+    return view_result(graph,choices)
 
 @mcp.tool()
 def initialization_contract()->dict:

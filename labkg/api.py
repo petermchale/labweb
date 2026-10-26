@@ -25,6 +25,9 @@ class GraphView(BaseModel):
     max_edges: int=Field(default=80,ge=1,le=200)
     predicates: list[str] | None=Field(default=None,max_length=30)
 
+class PresentationView(GraphView):
+    components: list[Literal['EvidenceGraph', 'EvidencePanel']] | None=Field(default=None,min_length=1,max_length=2)
+
 class Recall(BaseModel):
     query: str=Field(min_length=1,max_length=1000)
     limit: int=Field(default=8,ge=1,le=30)
@@ -98,10 +101,11 @@ def create_app(db_path=None,tokens=None):
         from .render import app_html
         return {'html':app_html()}
     @app.post('/view/a2ui')
-    def a2ui_view(payload:GraphView,actor=Depends(authenticate)):
+    def a2ui_view(payload:PresentationView,actor=Depends(authenticate)):
         from .presentation import composition
         try:
-            messages=composition(store.graph_view(**payload.model_dump()))
+            options=payload.model_dump(exclude={'components'})
+            messages=composition(store.graph_view(**options),payload.components)
             return Response('\n'.join(json.dumps(m) for m in messages)+'\n',media_type='application/a2ui+json')
         except ValueError as e: raise HTTPException(422,str(e)) from e
     @app.post('/view')

@@ -1,17 +1,19 @@
 import {App, applyDocumentTheme, applyHostStyleVariables} from '@modelcontextprotocol/ext-apps';
-import {compose,mountComposition} from './a2ui.js';
+import {compose,mountComposition,inspectComposition,defaultComponents} from './a2ui.js';
 import {el} from './graph.js';
 import './style.css';
 const root=document.getElementById('labweb'), status=document.getElementById('status');
-let current, requestGraph;
+let current, requestGraph, selectedComponents=defaultComponents;
 function fail(error){status.textContent=String(error.message||error);status.setAttribute('role','alert');}
-function show(data){
-  current=data;status.textContent='';status.removeAttribute('role');
-  mountComposition(root,compose(data),{expand:requestGraph?async id=>{
+function show(result){
+  const messages=Array.isArray(result)?result:result?.contract==='labkg.view/v1'?result.a2ui:compose(result,selectedComponents);
+  const {data,components}=inspectComposition(messages);
+  mountComposition(root,messages,{expand:requestGraph?async id=>{
     const s=current.scope;
     status.textContent='Loading neighborhood…';
-    try{show(await requestGraph({query:s.query,project_id:s.project_id,focus:id,depth:Math.min(3,s.depth+1),max_nodes:s.max_nodes,max_edges:s.max_edges,predicates:s.predicates}));}catch(e){fail(e);}
+    try{show(await requestGraph({query:s.query,project_id:s.project_id,focus:id,depth:Math.min(3,s.depth+1),max_nodes:s.max_nodes,max_edges:s.max_edges,predicates:s.predicates,components:selectedComponents}));}catch(e){fail(e);}
   }:undefined});
+  current=data;selectedComponents=components;status.textContent='';status.removeAttribute('role');
 }
 function unpack(result){
   if(result.isError)throw Error(result.content?.find(c=>c.type==='text')?.text||'Graph request failed');
@@ -49,7 +51,7 @@ if(initial && initial.textContent.trim()!=='null'){
   const submit=el('button','Show subgraph',form);submit.type='submit';
   form.onsubmit=async event=>{
     event.preventDefault();const credential=token.value;
-    requestGraph=async args=>{const response=await fetch('/view',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${credential}`},body:JSON.stringify(args)});if(!response.ok)throw Error(`Graph request failed (${response.status})`);return response.json();};
+    requestGraph=async args=>{const response=await fetch('/view/a2ui',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${credential}`},body:JSON.stringify(args)});if(!response.ok)throw Error(`Graph request failed (${response.status})`);return (await response.text()).trim().split('\n').map(JSON.parse);};
     try{show(await requestGraph({query:query.value,project_id:project.value||null}));}catch(e){fail(e);}
   };
 }

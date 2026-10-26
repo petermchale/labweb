@@ -7,15 +7,16 @@ The viewer has three boundaries:
 3. `ui/src/main.js` handles MCP Apps or browser authentication and graph requests.
 
 `ui/src/a2ui.js` composes the graph and evidence panel using a deliberately small
-A2UI v0.9.1 catalog adapter. This is a prototype of the fixed Column + EvidenceGraph
-+ EvidencePanel composition, not a general-purpose A2UI interpreter. It rejects
+A2UI v0.9.1 catalog adapter. The agent can select EvidenceGraph, EvidencePanel,
+or both in the requested order, within a Column. It rejects
 unknown components, bindings and catalogs. A full native A2UI client still needs
 the Labweb custom components registered. Graph retrieval does not depend on A2UI.
 
 ## Data API
 
-`POST /view` and MCP `graph_view` now return `labkg.graph/v2`, defined in
-`labkg/graph.schema.json`. Only v2 contracts are supported; regenerate saved v1
+`POST /view` returns `labkg.graph/v2`, defined in
+`labkg/graph.schema.json`; MCP `graph_view` includes it in the `graph` field
+of its `labkg.view/v1` presentation envelope. Only v2 contracts are supported; regenerate saved v1
 graph data through `graph_view` before rendering it.
 
 Example tool arguments (no individual records required):
@@ -82,7 +83,41 @@ Use a read-only token. The page does not persist credentials in URLs or storage.
 `POST /view/a2ui` returns a three-message `application/a2ui+json` stream: create
 surface, define components, populate the graph model. Catalog identity is
 `urn:labweb:a2ui:catalog:v1`. The same composition is used inside the MCP App.
-Selection updates the evidence panel locally; expansion invokes the host adapter.
+Selection updates the evidence panel locally; expansion invokes the host adapter
+and preserves component choices. Evidence-only views provide an item picker so
+citations remain accessible without a graph.
+
+## Choose components in conversation
+
+Ask the connected agent, for example:
+
+- “Show only the HiFi graph for project demo.”
+- “Show just the source evidence for HiFi in project demo.”
+- “Show HiFi evidence first, then the graph, in project demo.”
+
+The agent translates these to `graph_view(query="HiFi", project_id="demo",
+components=[...])` with `['EvidenceGraph']`, `['EvidencePanel']`, or
+`['EvidencePanel', 'EvidenceGraph']`, respectively. Omission defaults to graph
+then evidence. `query` remains a graph search, separate from display choices.
+The tool description and enum schema advertise the available choices. Language
+interpretation is performed by the connected agent; the server does not invoke
+a model or interpret free text as rendering instructions.
+
+MCP `graph_view` now returns a `labkg.view/v1` envelope with `graph` (unchanged
+`labkg.graph/v2`) and `a2ui` (the selected three-message composition). Consumers
+that previously used the tool result directly as graph data must use its `graph`
+field. `POST /view` still returns only graph data. `POST /view/a2ui` accepts the
+same graph arguments plus an optional `components` list. Empty, duplicate or
+unknown choices are rejected. The viewer validates the full composition and
+bindings before replacing a surface and supports older graph-only tool results.
+Only the published catalog components are available; arbitrary layouts,
+incremental A2UI messages, and native third-party renderer registration remain
+unsupported.
+
+After updating, restart the HTTP server and reconnect the MCP bridge/client to
+refresh the tool schema and bundled viewer. Test each request above in the actual
+client; automated tests cover tool arguments, protocol delivery and rendering,
+not whether every conversational model maps every phrasing correctly.
 
 ## Build and verify
 

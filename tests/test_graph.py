@@ -74,6 +74,8 @@ def test_mcp_resource_and_tool_metadata(monkeypatch):
     tools=asyncio.run(mcp.list_tools())
     tool=next(t for t in tools if t.name=='graph_view')
     assert tool.meta['ui']['resourceUri']==UI_URI
+    assert 'components' in tool.input_schema['properties']
+    assert 'only the graph' in tool.description
     resources=asyncio.run(mcp.list_resources())
     resource=next(r for r in resources if str(r.uri)==UI_URI)
     assert resource.mime_type=='text/html;profile=mcp-app'
@@ -87,3 +89,28 @@ def test_a2ui_catalog_validates_server_components(graph_store):
     assert messages[0]['createSurface']['catalogId']==catalog['catalogId']
     for component in messages[1]['updateComponents']['components']:
         jsonschema.validate(component,catalog['components'][component['component']])
+
+@pytest.mark.parametrize('components', [['EvidenceGraph'], ['EvidencePanel'], ['EvidencePanel','EvidenceGraph']])
+def test_component_choices_cross_api_and_mcp(graph_store, monkeypatch, components):
+    from labkg import mcp_server
+    client=TestClient(create_app(graph_store.path,{'r'*20:{'actor':'reader','role':'reader'}}))
+    headers={'Authorization':'Bearer '+'r'*20}
+    args={'query':'hifi','project_id':'demo','components':components}
+    response=client.post('/view/a2ui',headers=headers,json=args)
+    assert response.status_code==200
+    messages=[json.loads(line) for line in response.text.splitlines()]
+    definitions=messages[1]['updateComponents']['components']
+    assert [c['component'] for c in definitions[1:]]==components
+    monkeypatch.setattr(mcp_server,'call',lambda path,payload:client.post(path,headers=headers,json=payload).json())
+    result=mcp_server.graph_view(**args)
+    assert result['contract']=='labkg.view/v1'
+    validate_contract(result['graph'])
+    assert result['a2ui']==messages
+    assert result['graph']==messages[2]['updateDataModel']['value']['graph']
+
+@pytest.mark.parametrize('components', [[], ['Unknown'], ['EvidenceGraph','EvidenceGraph'], ['EvidencePanel','EvidenceGraph','EvidencePanel']])
+def test_invalid_component_choices_rejected(graph_store, components):
+    from labkg.mcp_server import graph_view
+    client=TestClient(create_app(graph_store.path,{'r'*20:'test'}))
+    assert client.post('/view/a2ui',headers={'Authorization':'Bearer '+'r'*20},json={'components':components}).status_code==422
+    with pytest.raises(ValueError):graph_view(components=components)

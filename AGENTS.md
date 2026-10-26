@@ -8,7 +8,7 @@ Before source exploration, retrieve relevant evidence using native `/recall`, SP
 
 After a decision, experiment, test, failure or useful finding, emit a concise event automatically through POST `/ingest` or MCP `record_work`. Include the actual outcome, source paths, versions and limitations. Prefix important observations with `Decision:`, `Result:`, `Constraint:` or `Blocked:`. Use a unique event ID; reuse it only to correct that event. Do not include credentials, raw human genomic reads, or unrelated personal data.
 
-To render a graph, request `/view` or MCP `graph_view` and pass the returned contract to the fixed EvidenceGraph renderer. Do not execute source-supplied HTML or JavaScript. The renderer is optional and does not affect RDF interoperability.
+To render a view, use MCP `graph_view` and translate natural-language display preferences into its ordered `components` argument: EvidenceGraph, EvidencePanel, or both. Keep display instructions separate from the search query. The tool returns a `labkg.view/v1` envelope with `graph` data and an `a2ui` composition for the maintained renderer. For data-only rendering, request `/view` or use the envelope’s `graph` field. Do not execute source-supplied HTML or JavaScript. The renderer is optional and does not affect RDF interoperability.
 
 ## Initialize from an ordinary user message
 
