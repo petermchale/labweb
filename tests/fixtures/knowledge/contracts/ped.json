@@ -1,0 +1,7 @@
+{
+  "path": "/synthetic/*.ped",
+  "schema": {
+    "type": "string",
+    "description": "Synthetic file contract for tests; no individual records."
+  }
+}

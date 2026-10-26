@@ -9,12 +9,12 @@ The agent derives the project-specific file schemas and workflow descriptions. T
 From this package, after installing it as described in README.md:
 
 ```bash
-python examples/dev_server.py --state .labkg-dev --port 8766
+./scripts/dev.sh
 ```
 
-This creates a local persistent database, a private token file and `.labkg-dev/mcp-config.json`. Register the `labkg` entry from that file with your MCP-capable agent client. It launches `python -m labkg.mcp_server` with the server URL and token-file path. The configuration contains no token value. Client configuration formats differ; the generated file uses the common `mcpServers` JSON shape. Registration in your agent application is still a connection/setup step, not something this server can do by itself.
+This creates a local persistent database, a private token file and `mcp-config.json` in `$HOME/labweb-project-data/runtime/`. Set `LABKG_STATE` in both launchers to override that directory. Register the `labkg` entry from that file with your MCP-capable agent client. It launches `python -m labkg.mcp_server` with the server URL and token-file path. The configuration contains no token value. Client configuration formats differ; the generated file uses the common `mcpServers` JSON shape. Registration in your agent application is still a connection/setup step, not something this server can do by itself.
 
-For this checkout, start `./scripts/dev.sh`; state and generated connection configuration are in `.labkg-dev/`. See [client-specific setup and UX tests](docs/UX_TESTING.md). Runtime databases and credentials are not committed. The historical reports describe the separate development instance used to verify this implementation.
+State and generated connection configuration live outside the checkout. See [client-specific setup and UX tests](docs/UX_TESTING.md), including migration from the previous `.labkg-dev/` directory. Runtime databases and credentials are not committed.
 
 ## What you tell the agent
 
@@ -34,11 +34,9 @@ Native HTTP equivalents are `GET /initialization/contract`, `POST /sources/read`
 
 ## What was tested
 
-A real MCP client connected to an initially empty dev graph, fetched the pinned Tapestry AGENTS.md and the public gist README, and submitted the distillation authored by this agent from the original user prompt. It initialized two file contracts and six workflows, retrieved the resulting context, and verified safe retry. No seed script populated the dev graph. `examples/connected_initialization_probe.py` is the reproducible transport test; `examples/methylation-initialization.json` is the exact inspectable agent-authored proposal with fetched-source references.
+The automated suite covers atomic rejection of incorrect quotations/digests, out-of-project IDs, invalid schemas and raw-row payloads; validation-only calls; restart/replay; concurrent duplicates; source-fetch constraints; and reader/write permissions. Run `.venv/bin/python -m pytest tests -q` for the current results.
 
-The probe replays that authored proposal—it does not invoke a fresh model to infer schemas. Thus the test proves the connection and initialization machinery, not general model reliability. Source quotation checks establish traceability, not independent scientific validation. The schemas have not been checked against the inaccessible full data files.
-
-47 tests passed, including atomic rejection of incorrect quotations/digests, out-of-project IDs, invalid schemas and raw-row payloads; validation-only calls; restart/replay; concurrent duplicates; source-fetch constraints; and reader/write permissions. Live initialization results are in `reports/connected-initialization.json`.
+These checks validate the protocol and persistence behavior. Fresh-agent schema inference and conversational quality require the [manual UX tests](docs/UX_TESTING.md). Source quotation checks establish traceability, not independent scientific validation; full source-data validation remains outstanding.
 
 ## Is this enough to begin the trio Nextflow generalization?
 
@@ -52,4 +50,4 @@ Real-data validation will still require the source files and pipeline runtime wh
 
 The server detects structural gaps; the agent must also identify semantic ambiguities and record them in `clarifications` with a question, reason and `required_for` stage. Unanswered initialization questions block submission. Implementation or validation questions remain explicit open issues without blocking a metadata-only KG. Partial assessment drafts are not stored. The server returns questions; the connected agent is responsible for asking them and waiting, never inventing answers or treating silence as an answer.
 
-The live MCP clarification probe omitted a known file path and received a targeted user question; restoring the original user-supplied path made the draft ready. Omitting workflows instead produced an agent task. This tests the protocol, not a new human conversation. See `reports/clarification-check.json`.
+Test clarification by omitting a required path during the [manual UX tests](docs/UX_TESTING.md). The agent should ask for the missing path and wait for the answer; missing source extraction or workflow distillation remains agent work.

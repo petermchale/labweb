@@ -7,7 +7,11 @@ Run these commands from the repository. Python 3.11+ is required.
 ./scripts/dev.sh
 ```
 
-Keep the server terminal open. It binds only to localhost:8766, creates an empty persistent KG in `.labkg-dev/`, and creates a private token file. If another server uses 8766, stop that instance or set `LABKG_PORT=8767` when starting this server and `LABKG_URL=http://127.0.0.1:8767` in the MCP launcher environment. Do not connect the launcher to a different instance's token.
+Keep the server terminal open. It binds only to localhost:8766, creates an empty persistent KG in `$HOME/labweb-project-data/runtime/` (outside the checkout), and creates a private token file. Set `LABKG_STATE` to override that directory in both launchers. If another server uses 8766, stop that instance or set `LABKG_PORT=8767` when starting this server and `LABKG_URL=http://127.0.0.1:8767` in the MCP launcher environment. Do not connect the launcher to a different instance's token.
+
+Project knowledge lives separately under `$HOME/labweb-project-data/methylation/knowledge/`; the runtime KG can serve multiple projects.
+
+For an existing `.labkg-dev/` or `~/.local/state/labweb/` installation, stop the HTTP server before moving the entire directory to the new state path. Preserve the database, any SQLite WAL/SHM files, and `agent.token` together. Restart `./scripts/dev.sh` to regenerate `mcp-config.json` with the new token path, then reconnect MCP clients so they read the new path. Do not start a fresh server at the destination before migrating.
 
 ## Connect Codex
 
@@ -59,23 +63,34 @@ Then ask the agent to record one agreed decision with `record_work`. Open the ot
 - Can the other client recover the result and the recorded decision?
 - Does the KG omit individual PED/manifest records?
 
-Do not consider a replay of the supplied example bundle a test of fresh model distillation. The committed reports establish server/protocol tests; conversational quality in either client is yours to assess here. There is no background LLM worker or automatic capture of all agent activity. The agent must emit useful summaries with `record_work`.
+Do not consider a replay of the supplied example bundle a test of fresh model distillation. The automated suite checks server/protocol behavior; conversational quality in either client is yours to assess here. There is no background LLM worker or automatic capture of all agent activity. The agent must emit useful summaries with `record_work`.
 
 ## Fresh state and checks
 
 To repeat from an empty KG, stop the server and preserve the old state by choosing a new directory:
 
 ```bash
-LABKG_STATE="$PWD/.labkg-dev-second" ./scripts/dev.sh
+LABKG_STATE="$HOME/labweb-project-data/runtime-second" ./scripts/dev.sh
 ```
 
 Register a separate MCP entry with `LABKG_STATE` passed to the launcher using your client's `--env` option. Keep server and launcher state paths identical. Using new project IDs in the existing KG is simpler when isolation is unnecessary. State directories and tokens are ignored by Git.
 
-Run the automated suite with `.venv/bin/python -m pytest tests -q`. The live replay harness is optional and populates a fixed demonstration project; it is not required before your UX test:
+Run the automated suite with `.venv/bin/python -m pytest tests -q`. Tests use synthetic fixtures. Project-specific replay tools and completed proposals belong in an external project-data directory and are not part of a fresh conversational UX test. See `examples/README.md` for the generic integration demonstrations. Real-data validation and production hosting remain separate work.
 
-```bash
-.venv/bin/python examples/connected_initialization_probe.py --config .labkg-dev/mcp-config.json --output .labkg-dev/initialization-report.json
-.venv/bin/python examples/clarification_probe.py --config .labkg-dev/mcp-config.json --output .labkg-dev/clarification-report.json
-```
+## Remote evidence viewer
 
-The replay may refresh the tracked example proposal with current source references. Review that change before committing. Real-data validation and production hosting remain separate work; the trio Nextflow implementation is not included.
+See [EVIDENCE_VIEWER.md](EVIDENCE_VIEWER.md) for architecture and compatibility limits.
+After updating/restarting the HTTP service and MCP bridge, ask:
+
+> Use graph_view with project_id methylation-codex-ux, query HiFi Tapestry, and depth 2.
+
+In an MCP Apps-capable client, the graph should appear without local renderer
+commands. Select a relationship and verify the source quotation/revision, filter
+relationships, and expand a node. Confirm omission counts appear when limits are
+small. The authenticated browser fallback is http://127.0.0.1:8766/viewer.
+Use a reader token; do not paste credentials into chat or URLs.
+
+The UI receives a versioned subgraph and only uses maintained components. It
+must never execute HTML/JavaScript contained in source evidence. The A2UI adapter
+currently supports only the published fixed composition, not arbitrary screens.
+Run `npm run build:ui` and `npm run test:ui` after UI changes in addition to pytest.

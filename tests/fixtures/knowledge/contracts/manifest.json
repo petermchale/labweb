@@ -1,0 +1,7 @@
+{
+  "path": "/synthetic/manifest.json",
+  "schema": {
+    "type": "object",
+    "description": "Synthetic file contract for tests; no individual records."
+  }
+}
