@@ -34,7 +34,23 @@ The server supports metadata-only file contracts, source-grounded workflow plans
 - Allowlisted HTTPS GitHub raw/API/gist connector; bounded downloads; no execution of fetched source. Import specific URLs rather than unrestricted website crawling.
 - Optional MCP tools: `initialization_contract`, `read_source`, `assess_initialization`, `initialize_project`, `project_context`, `recall`, `record_work`, `graph_view`. All call the same HTTP server.
 - Continuous append-only journal ingestion, restart-safe remote forwarding, and an opt-in command-output capture adapter. Agent integration policy is in `examples/AGENT_INTEGRATION.md`.
-- A fixed `EvidenceGraph` component with JSON Schema validation and evidence drill-down. The agent selects data/contracts; source content cannot generate executable UI code.
+- Maintained `EvidenceGraph` and `EvidencePanel` components with validated A2UI composition. The agent selects either component or both in display order; source content cannot generate executable UI code.
+
+## Choose the evidence view in conversation
+
+Ask a connected agent to show only the graph, only the source evidence, or both in your preferred order. For an initialized project named `demo`, for example:
+
+> Show only the source evidence for the HiFi-to-Tapestry handoff in project demo. Don't render the graph.
+
+Then ask:
+
+> Show both components, with the evidence panel before the graph.
+
+The agent maps these requests to MCP `graph_view`'s ordered `components` argument: `EvidenceGraph`, `EvidencePanel`, or both. The default is graph then evidence. Evidence-only mode includes an item picker for source quotations, lines and revisions; graph expansion preserves the chosen components and order. Only these published components are supported.
+
+MCP `graph_view` returns a `labkg.view/v1` envelope containing `graph` (the unchanged `labkg.graph/v2` data) and `a2ui` (the selected composition). Data-only consumers should use the `graph` field or `POST /view`. After updating Labweb, restart the HTTP server and reconnect the MCP bridge/client to refresh the tool schema and viewer.
+
+See the [connected-agent guide](CONNECTED_AGENT.md#choose-which-components-to-render) for prompts and the [viewer guide](docs/EVIDENCE_VIEWER.md) for contracts and compatibility limits.
 
 ## Run locally
 
@@ -136,6 +152,8 @@ Create the empty journal before starting the watcher. Use a new filename for eac
 
 ```bash
 python -m pytest -q tests
+npm run build:ui
+npm run test:ui
 python examples/mcp_probe.py /path/to/two-test-token-map.json
 ```
 
