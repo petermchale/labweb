@@ -1,6 +1,8 @@
 # Labweb — shared lab knowledge for connected agents
 
-Start with **[Codex and Claude Code setup and UX testing](docs/UX_TESTING.md)**. Run `./scripts/setup.sh`, then `./scripts/dev.sh`. This repository starts with an empty KG; the connected agent initializes it from your metadata. LabKG is the Python server package.
+Labweb is a shared memory for the AI coding agents your lab uses. When agents like Claude Code or Codex work on lab projects, they tend to rediscover the same things each session: where the data lives, what file formats mean, which decisions were already made, and which approaches failed. Labweb runs a small server that stores this knowledge as a graph, with source references such as files, lines, revisions, and who recorded it. Connected agents can recall it before starting work and record new decisions, results, and limitations as they go, so the next person’s agent starts with context instead of re-searching folders.
+
+To try it: Start with **[Codex and Claude Code setup and UX testing](docs/UX_TESTING.md)**. Run `./scripts/setup.sh`, then `./scripts/dev.sh`. This repository starts with an empty knowledge graph (KG); the connected agent initializes it from your metadata. LabKG is the Python server package.
 
 **Connected-agent initialization is available:** give the metadata and source URLs to an agent with the LabKG tools; the agent authors the schemas/workflow bundle and the dev server validates and atomically commits it. See [the dev-server and agent guide](CONNECTED_AGENT.md).
 
