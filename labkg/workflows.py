@@ -6,10 +6,9 @@ resolution, ontology inference or general Vault-LD round-trip is claimed.
 import json
 from pathlib import Path
 import yaml
-from rdflib import Graph,URIRef,RDF
+from rdflib import Graph
 
 CONTEXT=json.loads(Path(__file__).with_name('workflow-context.jsonld').read_text())['@context']
-KG='https://labkg.local/vocab/'
 
 class UniqueLoader(yaml.SafeLoader): pass
 

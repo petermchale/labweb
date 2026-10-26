@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 name = "labkg"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["PyYAML==6.0.3", "rdflib==7.6.0", "fastapi==0.162.0", "uvicorn==0.54.0", "httpx==0.28.1", "mcp==2.3.0", "pyshacl==0.40.1"]
+dependencies = ["PyYAML==6.0.3", "rdflib==7.6.0", "fastapi==0.162.0", "uvicorn==0.54.0", "httpx==0.28.1", "mcp==2.3.0", "pyshacl==0.40.1", "jsonschema==4.26.0"]
 [project.optional-dependencies]
 test = ["pytest==9.1.1"]
 [project.scripts]
@@ -15,4 +15,4 @@ labkg-mcp = "labkg.mcp_server:main"
 packages = ["labkg"]
 
 [tool.setuptools.package-data]
-labkg = ["*.ttl", "*.html", "*.json", "*.jsonld"]
+labkg = ["*.ttl", "*.html", "*.json", "*.jsonld", "*.txt"]

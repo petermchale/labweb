@@ -2,7 +2,7 @@
 import itertools
 import json
 import multiprocessing
-from rdflib import Dataset,Literal,URIRef,BNode
+from rdflib import Dataset,URIRef,BNode
 from rdflib.plugins.sparql.parser import parseQuery
 from pyparsing import ParseResults
 

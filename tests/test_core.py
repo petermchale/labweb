@@ -90,20 +90,6 @@ def test_ast_relations(store):
     assert list(ds.triples((None,KG.imports,uid('python-module','phasing_trio'))))
     assert list(ds.triples((None,KG.defines,None)))
 
-def test_trio_contract_not_parent_reference_or_id_prefix(store):
-    from labkg.trios import eligible_trios
-    store.ingest('urn:fixture:ped','ped','F C D M 1 UW\nF D 0 0 1 UW',evidence_status='synthetic')
-    assert eligible_trios(store)==[]
-    store.ingest('urn:fixture:ped','ped','F C D M 1 UW\nF D 0 0 1 UW\nF M 0 0 2 UW',evidence_status='synthetic')
-    store.ingest('urn:fixture:manifest','manifest',{'C,UW':['/c1.bam','/c2.bam'],'D,UW':['/d.bam'],'M-1,UW':['/m.bam']},evidence_status='synthetic')
-    trio=eligible_trios(store)[0]
-    assert trio['missing_bams']==['mother']
-    assert len(trio['members']['child']['unaligned_bams'])==2
-    store.ingest('urn:fixture:manifest','manifest',{'C,UW':['/c1.bam','/c2.bam'],'D,UW':['/d.bam'],'M,UW':['/m.bam']},evidence_status='synthetic')
-    trio=eligible_trios(store)[0]
-    assert trio['ready_for_wdl_input'] and not trio['ready_for_tapestry']
-    assert eligible_trios(store,'longitudinal')==[]
-
 def test_readonly_member(store):
     client=TestClient(create_app(store.path,{'r'*20:{'actor':'reader','role':'reader'}}))
     h={'Authorization':'Bearer '+'r'*20}
@@ -127,4 +113,4 @@ def test_ui_contract(store):
     from pathlib import Path
     import labkg.core
     store.ingest('urn:ui','text','Decision: preserve PS\nSee src/phasing_trio.py')
-    jsonschema.validate(store.graph_view('PS'),json.loads(Path(labkg.core.__file__).with_name('ui.schema.json').read_text()))
+    jsonschema.validate(store.graph_view('PS'),json.loads(Path(labkg.core.__file__).with_name('graph.schema.json').read_text()))

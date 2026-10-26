@@ -16,6 +16,15 @@ class Ingest(BaseModel):
     study: str='non-longitudinal'
     evidence_status: Literal['source','user-example','synthetic','agent-report']='agent-report'
 
+class GraphView(BaseModel):
+    query: str=Field(default="",max_length=1000)
+    project_id: str | None=Field(default=None,pattern=r"^[a-z][a-z0-9-]{0,63}$")
+    focus: str | None=Field(default=None,max_length=2000)
+    depth: int=Field(default=1,ge=0,le=3)
+    max_nodes: int=Field(default=50,ge=1,le=100)
+    max_edges: int=Field(default=80,ge=1,le=200)
+    predicates: list[str] | None=Field(default=None,max_length=30)
+
 class Recall(BaseModel):
     query: str=Field(min_length=1,max_length=1000)
     limit: int=Field(default=8,ge=1,le=30)
@@ -75,9 +84,30 @@ def create_app(db_path=None,tokens=None):
     @app.post('/recall')
     def recall(payload:Recall,actor=Depends(authenticate)):
         return store.recall(payload.query,payload.limit)
+    @app.get('/viewer')
+    def viewer():
+        from .render import app_html
+        return Response(app_html(),media_type='text/html',headers={
+            'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
+            'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
+    @app.get('/ui/catalog')
+    def ui_catalog():
+        return json.loads(Path(__file__).with_name('a2ui.catalog.json').read_text())
+    @app.get('/ui/resource')
+    def ui_resource(actor=Depends(authenticate)):
+        from .render import app_html
+        return {'html':app_html()}
+    @app.post('/view/a2ui')
+    def a2ui_view(payload:GraphView,actor=Depends(authenticate)):
+        from .presentation import composition
+        try:
+            messages=composition(store.graph_view(**payload.model_dump()))
+            return Response('\n'.join(json.dumps(m) for m in messages)+'\n',media_type='application/a2ui+json')
+        except ValueError as e: raise HTTPException(422,str(e)) from e
     @app.post('/view')
-    def view(payload:Recall,actor=Depends(authenticate)):
-        return store.graph_view(payload.query)
+    def view(payload:GraphView,actor=Depends(authenticate)):
+        try: return store.graph_view(**payload.model_dump())
+        except ValueError as e: raise HTTPException(422,str(e)) from e
     @app.api_route('/sparql',methods=['GET','POST'])
     async def sparql(request:Request,actor=Depends(authenticate)):
         from .sparql import execute
@@ -94,15 +124,6 @@ def create_app(db_path=None,tokens=None):
             return Response(json.dumps(answer),media_type='application/sparql-results+json')
         except TimeoutError as e: raise HTTPException(408,str(e)) from e
         except ValueError as e: raise HTTPException(400,str(e)) from e
-    @app.get('/trios')
-    def trios(study:str='non-longitudinal',actor=Depends(authenticate)):
-        from .trios import eligible_trios
-        from rdflib import RDF
-        from .core import KG
-        if not any(store.dataset().subjects(RDF.type,KG.Person)):
-            return {'status':'not_evaluated','trios':None,'reason':'Only file paths and schemas are retained; evaluate trio membership against the source data where it resides.'}
-        try: return {'status':'evaluated','trios':eligible_trios(store,study)}
-        except ValueError as e: raise HTTPException(409,str(e)) from e
     @app.get('/export')
     def export(history:bool=False,actor=Depends(authenticate)):
         return Response(store.dataset(history).serialize(format='trig'),media_type='application/trig')

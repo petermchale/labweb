@@ -3,7 +3,6 @@
 The connected model performs synthesis. This module never claims a deterministic
 parser inferred a workflow or that a matching quotation proves interpretation.
 """
-import hashlib
 import json
 import re
 import tempfile
@@ -75,6 +74,8 @@ def setup(store):
 def contract():
     return {'contract':'labkg.initialize/v1','bundle_schema':InitializationBundle.model_json_schema(by_alias=True),
       'workflow_context':CONTEXT,
+      'workflow_vocabulary':{'format':'text/turtle',
+        'text':Path(__file__).with_name('workflow-vocabulary.ttl').read_text()},
       'workflow_definition_example':{'id':BASE+'project/PROJECT/workflow/WORKFLOW','type':'kg:Workflow','label':'Workflow name',
         'status':'documented procedure, not an execution','derivedFrom':'SOURCE_ID_FROM_READ_SOURCE','sourceDigest':'SHA256_FROM_READ_SOURCE',
         'sourceStartLine':1,'sourceEndLine':2,'sourceQuote':'Exact source lines','inputs':[BASE+'project/PROJECT/file/manifest'],

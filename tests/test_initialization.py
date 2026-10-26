@@ -2,7 +2,7 @@ import copy
 from concurrent.futures import ThreadPoolExecutor
 import pytest
 from fastapi.testclient import TestClient
-from rdflib import RDF
+from rdflib import Graph, RDF, URIRef
 from labkg.core import Store,KG
 from labkg.api import create_app
 from labkg.initialize import snapshot,initialize_project,project_context,read_source
@@ -73,7 +73,19 @@ def test_http_contract_initialize_and_reader(fixture):
     store,bundle=fixture
     client=TestClient(create_app(store.path,{'a'*20:'alice','r'*20:{'actor':'reader','role':'reader'}}))
     writer={'Authorization':'Bearer '+'a'*20};reader={'Authorization':'Bearer '+'r'*20}
-    assert client.get('/initialization/contract',headers=writer).json()['bundle_schema']
+    contract=client.get('/initialization/contract',headers=writer).json()
+    assert contract['bundle_schema']
+    vocabulary=contract['workflow_vocabulary']
+    assert vocabulary['format']=='text/turtle'
+    definitions=Graph().parse(data=vocabulary['text'],format='turtle')
+    assert (KG.Workflow,RDF.type,URIRef('http://www.w3.org/2000/01/rdf-schema#Class')) in definitions
+    # Every KG term mapped by the JSON-LD context has a published definition.
+    for mapping in contract['workflow_context'].values():
+        term=mapping.get('@id','') if isinstance(mapping,dict) else mapping
+        if term.startswith('kg:'):
+            term=str(KG[term[3:]])
+        if term.startswith(str(KG)) and term!=str(KG):
+            assert list(definitions.predicate_objects(URIRef(term))), term
     assert client.post('/initialize',headers=reader,json={'bundle':bundle}).status_code==403
     assert client.post('/initialize',headers=writer,json={'bundle':bundle}).status_code==200
     assert client.get('/projects/test-project',headers=reader).json()['title']=='Test project'

@@ -14,3 +14,13 @@ deploy/tokens.json
 .mcp.json
 .codex/
 work/
+
+node_modules/
+test-results/
+playwright-report/
+
+build/
+ui/.build/
+
+# Project-specific knowledge belongs outside the source repository.
+/knowledge/

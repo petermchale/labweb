@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Labweb graph data v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "component",
+    "nodes",
+    "edges",
+    "evidence",
+    "scope"
+  ],
+  "properties": {
+    "contract": {
+      "const": "labkg.graph/v2"
+    },
+    "component": {
+      "const": "EvidenceGraph"
+    },
+    "nodes": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "properties"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "subject",
+                "predicate",
+                "object",
+                "revision",
+                "line",
+                "evidence",
+                "method",
+                "status",
+                "id",
+                "source"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "subject": {
+                  "type": "string"
+                },
+                "predicate": {
+                  "type": "string"
+                },
+                "object": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "evidence": {
+                  "type": "string"
+                },
+                "method": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "required": [
+          "subject",
+          "predicate",
+          "object",
+          "revision",
+          "line",
+          "evidence",
+          "method",
+          "status",
+          "id",
+          "source"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "predicate": {
+            "type": "string"
+          },
+          "object": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "depth",
+        "max_nodes",
+        "max_edges",
+        "candidate_nodes",
+        "candidate_edges",
+        "omitted_nodes",
+        "omitted_edges",
+        "query",
+        "project_id",
+        "focus",
+        "predicates",
+        "seed_ids",
+        "truncated",
+        "selection"
+      ],
+      "properties": {
+        "depth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_edges": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidate_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidate_edges": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "omitted_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "omitted_edges": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "query": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "focus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "predicates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "seed_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "selection": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

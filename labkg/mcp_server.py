@@ -1,5 +1,6 @@
 """A stdio MCP bridge: all agents share the HTTP server's persistent graph."""
 import os
+from typing import Any
 import httpx
 from mcp.server.mcpserver import MCPServer
 
@@ -31,10 +32,26 @@ def record_work(event_id:str,summary:str,study:str='non-longitudinal')->dict:
     return call('/ingest',{'source':str(uid('event',event_id)),'kind':'text','content':summary,
                            'study':study,'evidence_status':'agent-report'})
 
-@mcp.tool()
-def graph_view(query:str)->dict:
-    """Return the allowlisted EvidenceGraph UI contract, including cited evidence."""
-    return call('/view',{'query':query})
+UI_URI = 'ui://labweb/evidence-graph/v2'
+
+@mcp.resource(UI_URI, mime_type='text/html;profile=mcp-app',
+              meta={'ui':{'csp':{'connectDomains':[],'resourceDomains':[]}}})
+def evidence_graph_app()->str:
+    """Fixed viewer fetched from the remote Labweb service, with no embedded credentials."""
+    return call('/ui/resource')['html']
+
+@mcp.tool(meta={'ui':{'resourceUri':UI_URI}}, structured_output=True)
+def graph_view(query:str='', project_id:str|None=None, focus:str|None=None,
+               depth:int=1, max_nodes:int=50, max_edges:int=80,
+               predicates:list[str]|None=None)->dict[str, Any]:
+    """Explore an evidence subgraph with citations and explicit scope/omission counts.
+
+    Set project_id for project-scoped retrieval. Focus on a returned node ID to
+    expand its neighborhood (depth 0-3). This is read-only. Supporting MCP hosts
+    display the bundled EvidenceGraph app; other clients receive the same data.
+    """
+    return call('/view',dict(query=query,project_id=project_id,focus=focus,depth=depth,
+                            max_nodes=max_nodes,max_edges=max_edges,predicates=predicates))
 
 @mcp.tool()
 def initialization_contract()->dict:

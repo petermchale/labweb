@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:labweb:a2ui:catalog:v1",
+  "catalogId": "urn:labweb:a2ui:catalog:v1",
+  "title": "Labweb evidence composition prototype",
+  "components": {
+    "Column": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "component": {
+          "const": "Column"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "EvidenceGraph": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "component": {
+          "const": "EvidenceGraph"
+        },
+        "graph": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "const": "/graph"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        },
+        "selection": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "const": "/selection"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "graph",
+        "selection"
+      ],
+      "additionalProperties": false
+    },
+    "EvidencePanel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "component": {
+          "const": "EvidencePanel"
+        },
+        "graph": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "const": "/graph"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        },
+        "selection": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "const": "/selection"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "graph",
+        "selection"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "functions": {}
+}
