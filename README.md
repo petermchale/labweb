@@ -57,13 +57,27 @@ See the [connected-agent guide](CONNECTED_AGENT.md#choose-which-components-to-re
 Python 3.11+ (tested here on 3.13). From this directory:
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install '.[test]'
+./scripts/setup.sh
+./scripts/dev.sh
+```
+
+Run setup once to create the virtual environment and install dependencies; rerun it when dependencies change. For subsequent sessions, run only `./scripts/dev.sh`. The launcher serves at `http://127.0.0.1:8766` and manages the database, private agent token and MCP configuration under `$HOME/labweb-project-data/runtime/`. No manual token generation or `LABKG_TOKENS_FILE` setting is needed for this flow. See [client setup](docs/UX_TESTING.md) to connect Codex or Claude Code.
+
+<details>
+<summary>Optional: start the server manually with custom credentials</summary>
+
+After setup, use this alternative when you need an explicit token-to-identity/role mapping. Run it instead of the dev launcher; it uses a separate database and defaults to port 8765.
+
+```bash
 # Generate a token without placing its value in shell history:
 .venv/bin/python -c 'import json,secrets; from pathlib import Path; p=Path("tokens.json"); p.write_text(json.dumps({secrets.token_urlsafe(32):{"actor":"alice","role":"writer"}})); p.chmod(0o600)'
 export LABKG_TOKENS_FILE="$PWD/tokens.json"
 .venv/bin/labkg --db data/labkg.sqlite serve
 ```
+
+For an MCP client using this alternative, set `LABKG_URL` to `http://127.0.0.1:8765` and provide one matching token through `LABKG_TOKEN` or a plain-text `LABKG_TOKEN_FILE`. The server's `LABKG_TOKENS_FILE` contains the JSON mapping, not a single client token.
+
+</details>
 
 Token configuration maps each opaque credential to a member/agent identity and `reader` or `writer` role. HTTP callers cannot override the authenticated actor. All authenticated lab members can read the graph; writers share edit access to source heads. This is one collaborative trust domain, **not** a multi-tenant or per-study access-control system. Use unique event/source IDs; a writer can supersede a shared source. Historical revisions remain available. Rotate/revoke credentials by editing the token file and restarting the service. No credentials ship in the deliverable.
 
