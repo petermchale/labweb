@@ -32,6 +32,24 @@ Follow that with the original metadata and URLs. The agent calls:
 
 Native HTTP equivalents are `GET /initialization/contract`, `POST /sources/read`, `POST /initialization/assess`, `POST /initialize`, and `GET /projects/{project_id}`. MCP remains optional.
 
+## Choose which components to render
+
+After initialization, ask the connected agent to display evidence using ordinary language. For example, for the existing `methylation-codex-ux` project:
+
+> Show only the source evidence for the HiFi-to-Tapestry handoff in project methylation-codex-ux. Don't render the graph.
+
+Then try:
+
+> Show both components, with the evidence panel before the graph.
+
+The agent translates the display request into the ordered `components` argument of MCP `graph_view`: `['EvidencePanel']`, `['EvidenceGraph']`, or both in the requested order. Omitting the argument defaults to graph then evidence. Display instructions stay separate from the graph search `query`; the connected agent interprets the language, without an additional server-side model call.
+
+The maintained A2UI renderer supports these two components. Evidence-only mode provides an **Evidence item** picker for inspecting quotations, source lines and revisions. When both components are shown, selecting a graph item updates the evidence panel. Neighborhood expansion preserves the chosen components and their order. Empty, duplicate and unsupported component choices are rejected.
+
+MCP `graph_view` returns a `labkg.view/v1` envelope containing `graph` (the `labkg.graph/v2` data contract) and `a2ui` (the selected composition). Data-only consumers should use the envelope's `graph` field or `POST /view`. `POST /view/a2ui` accepts graph arguments plus the optional ordered `components` list and returns the A2UI stream.
+
+After updating Labweb, restart the HTTP server and reconnect the client's MCP bridge so it discovers the new tool schema and loads the updated viewer. Restarting only the HTTP server can leave an existing MCP connection exposing the old arguments. Verify that `graph_view` exposes `components` before testing. See the [viewer guide](docs/EVIDENCE_VIEWER.md) for the contract and compatibility limits.
+
 ## What was tested
 
 The automated suite covers atomic rejection of incorrect quotations/digests, out-of-project IDs, invalid schemas and raw-row payloads; validation-only calls; restart/replay; concurrent duplicates; source-fetch constraints; and reader/write permissions. Run `.venv/bin/python -m pytest tests -q` for the current results.
