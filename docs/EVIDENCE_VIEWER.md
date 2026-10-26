@@ -77,7 +77,7 @@ Cytoscape. Use the actual app panel and resource/initialization logs for diagnos
 
 The browser fallback is `/viewer`. Its public shell contains no graph data.
 Enter a reader token, project and query; the token remains in page memory only,
-and `/view` authenticates every request. Serve through HTTPS outside localhost.
+and `/view/a2ui` authenticates every request. Serve through HTTPS outside localhost.
 Use a read-only token. The page does not persist credentials in URLs or storage.
 
 `POST /view/a2ui` returns a three-message `application/a2ui+json` stream: create
@@ -118,6 +118,14 @@ After updating, restart the HTTP server and reconnect the MCP bridge/client to
 refresh the tool schema and bundled viewer. Test each request above in the actual
 client; automated tests cover tool arguments, protocol delivery and rendering,
 not whether every conversational model maps every phrasing correctly.
+
+Live component-choice checks (2026-10-26): after restarting Codex, MCP discovery
+exposed the `components` argument and the agent translated the evidence-only and
+evidence-first prompts into the expected ordered choices. For the five-node,
+five-relationship miniwdl-output handoff, returned compositions contained only
+EvidencePanel, then EvidencePanel followed by EvidenceGraph, respectively.
+These checks verified tool calls and returned compositions; independent visual
+inspection of these two live app views was not performed.
 
 ## Build and verify
 
