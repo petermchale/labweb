@@ -2,6 +2,8 @@
 
 Labweb is a shared memory for the AI coding agents your lab uses. When agents like Claude Code or Codex work on lab projects, they tend to rediscover the same things each session: where the data lives, what file formats mean, which decisions were already made, and which approaches failed. Labweb runs a small server that stores this knowledge as a graph, with source references such as files, lines, revisions, and who recorded it. Connected agents can recall it before starting work and record new decisions, results, and limitations as they go, so the next person’s agent starts with context instead of re-searching folders.
 
+**The canonical use case is code development outside a protected environment.** Your agent uses Labweb and approved project context to produce code outside the environment that holds sensitive lab data. You review and approve that code before importing it into the protected environment, for example by pulling an approved GitHub revision there. Sensitive data and credentials stay inside the protected environment; the agent works with approved schemas, workflow descriptions and synthetic examples.
+
 To try it: Start with **[Codex and Claude Code setup and UX testing](docs/UX_TESTING.md)**. Run `./scripts/setup.sh`, then `./scripts/dev.sh`. This repository starts with an empty knowledge graph (KG); the connected agent initializes it from your metadata. LabKG is the Python server package.
 
 **Connected-agent initialization is available:** give the metadata and source URLs to an agent with the LabKG tools; the agent authors the schemas/workflow bundle and the dev server validates and atomically commits it. See [the dev-server and agent guide](CONNECTED_AGENT.md).
@@ -84,6 +86,8 @@ For an MCP client using this alternative, set `LABKG_URL` to `http://127.0.0.1:8
 Token configuration maps each opaque credential to a member/agent identity and `reader` or `writer` role. HTTP callers cannot override the authenticated actor. All authenticated lab members can read the graph; writers share edit access to source heads. This is one collaborative trust domain, **not** a multi-tenant or per-study access-control system. Use unique event/source IDs; a writer can supersede a shared source. Historical revisions remain available. Rotate/revoke credentials by editing the token file and restarting the service. No credentials ship in the deliverable.
 
 ## Security considerations
+
+The canonical workflow keeps the coding agent outside the protected environment: develop and test code using approved context and synthetic data, have the user review and approve the change, then import the approved revision through the environment's authorized process (for example, a GitHub pull). Execution against protected data happens inside that environment under its own controls. Only information approved to leave that environment should enter the agent's context or Labweb memory, including any results or error messages brought back for debugging. Labweb does not enforce this separation or the approval step; users must maintain them through their development and import process.
 
 Labweb is a development prototype that gives connected agents access to persistent, shared information. Its authentication, provenance and bounded interfaces provide useful safeguards, but do not establish that stored content is safe or trustworthy. Consider these boundaries before connecting agents or adding lab data:
 
