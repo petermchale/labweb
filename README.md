@@ -126,7 +126,13 @@ The initialization contract includes `workflow_vocabulary`, with `format: "text/
 
 The namespace `https://labkg.local/` is a prototype identifier namespace, not a publicly dereferenceable ontology service. Replace it with a controlled permanent lab namespace before production data migration.
 
-## Ingest and keep working
+## Add knowledge after initialization
+
+For the usual connected-agent workflow, keep working in conversation. Ask the agent to retrieve relevant context with `recall` or `project_context` and record useful decisions, results and limitations with `record_work`. The repository's agent policy instructs it to emit those summaries as it works. No additional shell commands or journal watcher are required for this workflow. MCP supplies the tools; the agent must actually call them to retain new knowledge.
+
+### Optional: import files through the CLI
+
+Use direct CLI ingestion when an administrator wants to add file contracts or workflow notes from disk. These commands are alternatives to connected-agent ingestion, not steps required after every initialization:
 
 ```bash
 labkg --db data/labkg.sqlite ingest tests/fixtures/knowledge/contracts/ped.json --kind file_contract
@@ -134,7 +140,11 @@ labkg --db data/labkg.sqlite ingest tests/fixtures/knowledge/contracts/manifest.
 labkg --db data/labkg.sqlite ingest tests/fixtures/knowledge/workflows/preparation.md --kind workflow
 ```
 
-These local examples are synthetic. Store real project knowledge in a separate data directory and pass its file paths to `ingest`. Project-specific experiment scripts and completed initialization proposals also belong outside the source checkout. Local CLI import is a trusted administrator path. Remote members use HTTP or the optional MCP adapter:
+These local examples are synthetic. Store real project knowledge in a separate data directory and pass its file paths to `ingest`. Project-specific experiment scripts and completed initialization proposals also belong outside the source checkout. Local CLI import is a trusted administrator path. Set `--db` to the intended server database; the CLI's default `labkg.sqlite` is separate from the dev launcher's runtime database.
+
+### Optional: connect to a remote server
+
+Remote members can use authenticated HTTP or configure this executable as a stdio MCP server in their agent client:
 
 ```bash
 export LABKG_URL=https://YOUR-LAB-DOMAIN
@@ -142,9 +152,11 @@ export LABKG_URL=https://YOUR-LAB-DOMAIN
 labkg-mcp
 ```
 
-Configure that executable as a stdio MCP server in any compatible agent client. Client registration is not performed automatically by this prototype, and this chat has not been globally reconfigured. A real MCP client harness and direct HTTP calls were used to connect this agent's work to the server.
+This is a manual remote-connection alternative. For local development with `./scripts/dev.sh`, follow the [client setup instructions](docs/UX_TESTING.md); an already connected client needs no additional registration here.
 
-For automatic command-output capture and upload, run the watcher in one supervised process and the agent through the adapter in another:
+## Optional command-output capture
+
+Use this separate workflow only when you want to capture a CLI process's output and forward it to the KG. It is not needed for connected-agent `record_work` summaries and does not capture all agent activity. Run the watcher in one supervised process and the agent through the adapter in another:
 
 ```bash
 labkg --db local-cursors.sqlite watch work-events.jsonl --url https://YOUR-LAB-DOMAIN
